@@ -1,0 +1,18 @@
+﻿(1) 下载hsqldb_1_8_1_3.zip，创建新的文件夹hsqldb。
+解压hsqldb.jar放在hsqldb文件夹中。
+
+(2) 创建批处理startdb.bat（可以指定java.exe的完整路径，用引号括起）
+内容如下：
+"D:\java\jdk1.6.0_20\bin\java.exe" -cp hsqldb.jar org.hsqldb.Server
+
+(3) 创建server.properties，内容如下：
+server.database.0=file:test/test
+server.dbname.0=test
+server.port=9001
+server.silent=true
+server.trace=false
+
+(4) 双击startdb.bat，自动生成test目录，并启动数据库（控制台不退出）。
+开始监听9001端口（不要开多个实例以避免端口冲突）
+如果测试结束可按Ctrl+C关闭数据库。
+

@@ -1,0 +1,39 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!-- Database connection settings -->
+        <!-- 数据库连接设置 -->
+        <property name="connection.driver_class">org.hsqldb.jdbcDriver</property>
+        <property name="connection.url">jdbc:hsqldb:hsql://localhost</property>
+        <property name="connection.username">sa</property>
+        <property name="connection.password"></property>
+        
+        <!-- JDBC connection pool (use the built-in) -->
+        <!-- JDBC连接池（使用内置）-->
+        <property name="connection.pool_size">1</property>
+        
+        <!-- SQL dialect -->
+        <!-- SQL方言 -->
+        <property name="dialect">org.hibernate.dialect.HSQLDialect</property>
+        
+        <!-- Enable Hibernate's automatic session context management -->
+        <!-- 开启Hibernate的自动上下文管理 -->
+        <property name="current_session_context_class">thread</property>
+        
+        <!-- Disable the second-level cache  -->
+        <!-- 关闭二级缓存 -->
+        <property name="cache.provider_class">org.hibernate.cache.NoCacheProvider</property>
+        
+        <!-- Echo all executed SQL to stdout -->
+        <!-- 输出所有执行SQL到stdout -->
+        <property name="show_sql">true</property>
+        
+        <!-- Drop and re-create the database schema on startup -->
+        <!-- 在启动时卸载并重新创建数据库 -->
+        <property name="hbm2ddl.auto">update</property>
+        <mapping resource="org/hibernate/tutorial/domain/Event.hbm.xml"/>
+    </session-factory>
+</hibernate-configuration>

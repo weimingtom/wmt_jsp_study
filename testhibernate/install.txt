@@ -1,0 +1,538 @@
+﻿Hibernate学习笔记一
+
+在普通java应用中使用Hibernate。
+代码参考自Hibernate的官方网站中文教程
+http://docs.jboss.org/hibernate/core/3.6/reference/zh-CN/html/tutorial.html
+
+一、安装JDK 6、Eclipse、Maven 2和m2e
+	JDK 6
+	http://www.oracle.com/technetwork/java/javase/downloads/index.html
+	
+	Eclipse Java EE
+	http://www.eclipse.org/
+	
+	Apache Maven 2.2.1
+	http://maven.apache.org/
+	
+	Maven Integration (M2E)
+	http://www.eclipse.org/m2e/
+	
+	（关于m2e的安装问题，见另一篇日志《Maven学习记录》）
+
+二、安装hsqldb
+	(1) 下载hsqldb_1_8_1_3.zip，创建新的文件夹hsqldb。
+	解压hsqldb.jar放在hsqldb文件夹中。
+
+	(2) 创建批处理startdb.bat（可以指定java.exe的完整路径，用引号括起）
+	内容如下：
+	"D:\java\jdk1.6.0_20\bin\java.exe" -cp hsqldb.jar org.hsqldb.Server
+
+	(3) 创建server.properties，内容如下：
+	server.database.0=file:test/test
+	server.dbname.0=test
+	server.port=9001
+	server.silent=true
+	server.trace=false
+
+	(4) 双击startdb.bat，自动生成test目录，并启动数据库（控制台不退出）。
+	开始监听9001端口（不要开多个实例以避免端口冲突）
+	如果测试结束可按Ctrl+C关闭数据库。
+
+三、创建工程
+New->Other->Maven Project->
+Next->Filter:填maven-archetype-quickstart并选中->
+Next->Group Id:填org.hibernate.tutorial->
+Artifact Id:填hibernate-tutorial->
+Package:填org.hibernate.tutorial->
+Finish
+
+四、修改编码格式
+右键->Properties->Resource->Text file encoding->
+Other填UTF-8。
+修改完后m2e会自动更新pom.xml的内容
+
+五、更改pom.xml
+把pom.xml改成如下所示：
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.hibernate.tutorial</groupId>
+  <artifactId>hibernate-tutorial</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>hibernate-tutorial</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+
+  <!-- 上面的pom.xml片段都是用下面命令行自动生成的，并且创建了目录结构（不包括src/main/resources） -->
+  <!-- 
+       mvn archetype:generate 
+           -DgroupId=org.hibernate.tutorial 
+           -DartifactId=hibernate-tutorial 
+           -DarchetypeArtifactId=maven-archetype-quickstart 
+           -DinteractiveMode=false
+    -->
+
+  <!-- we dont want the version to be part of the generated war file name -->
+  <!-- 我们不想让生成的war文件名中包含版本号 -->
+  <!--
+  <build>
+    <finalName>${artifactId}</finalName>
+  </build>
+    -->
+  
+  <!-- 关闭警告 -->
+  <!--
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+    -->
+  
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    
+    
+    <!-- 依赖的关键字搜索在http://www.mvnbrowser.com/index.html，输入相应的库名，如hibernate-core -->
+    <!-- maven的搜索引擎请参考http://maven.apache.org/general.html -->
+	<dependency>
+	  <groupId>org.hibernate</groupId>
+	  <artifactId>hibernate-core</artifactId>
+	  <version>3.3.2.GA</version>
+	</dependency>
+	<!-- Because this is a web app, we also have a dependency on the servlet api. -->
+	<!-- 因为这是个web应用，我们也有一个对servlet api的依赖。 -->
+	<dependency>
+	  <groupId>javax.servlet</groupId>
+	  <artifactId>servlet-api</artifactId>
+	  <version>2.5</version>
+	</dependency>
+	<!-- Hibernate uses slf4j for logging, for our purposes here use the simple backend -->
+	<!-- Hibernate使用slf4j输出日志，这里我们只使用简单后端 -->
+	<dependency>
+	  <groupId>org.slf4j</groupId>
+	  <artifactId>slf4j-simple</artifactId>
+	  <version>1.5.6</version>
+	</dependency>
+	<!-- Hibernate gives you a choice of bytecode providers between cglib and javassist -->
+	<!-- Hibernate让你可以选择bytecode提供者是cglib还是javassist -->
+	<dependency>
+	  <groupId>javassist</groupId>
+	  <artifactId>javassist</artifactId>
+	  <version>3.10.0.GA</version>
+	</dependency>
+	<dependency>
+	  <groupId>hsqldb</groupId>
+	  <artifactId>hsqldb</artifactId>
+	  <version>1.8.0.1</version>
+	</dependency>
+  </dependencies>
+  
+  <!-- see http://maven.apache.org/plugins/maven-resources-plugin/examples/encoding.html-->
+  <build>
+   <!-- 资源 -->
+   <!-- 保留所有.hbm.xml文件 -->
+   <resources>
+	<resource>
+	 <filtering>false</filtering>
+	 <directory>src/main/java</directory>
+	 <includes>
+	 <include>**/*.hbm.xml</include>
+	 </includes>
+    </resource>
+	<!-- 保留resources下的所有文件 -->
+	<resource>
+	 <filtering>false</filtering>
+	 <directory>src/main/resources</directory>
+	 <includes>
+	 <include>**/*</include>
+	 </includes>
+    </resource>
+   </resources>
+   
+   <!-- 资源和编译器插件，参数设置方法见http://maven.apache.org/plugins/index.html -->
+   <plugins>
+    <!-- 资源插件，使用UTF-8编码 -->
+    <plugin>
+	  <groupId>org.apache.maven.plugins</groupId>  
+	  <artifactId>maven-resources-plugin</artifactId>
+	  <version>2.5</version>
+	  <configuration>  
+	    <encoding>UTF-8</encoding>  
+	  </configuration>  
+    </plugin>
+    <!-- 编译器插件，使用JDK1.6，使用UTF-8编码 -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>2.3.2</version>
+      <configuration>
+        <source>1.5</source>
+        <target>1.5</target>
+        <encoding>UTF-8</encoding>
+      </configuration>
+    </plugin>
+    <!-- 执行插件的java任务，参数设置方法见http://mojo.codehaus.org/exec-maven-plugin/usage.html-->
+    <!-- 指定java主类和参数，用于测试 -->
+    <!-- mvn clean compile后执行mvn exec:java --> 
+    <!-- 如果执行命令行，则为 -->
+    <!-- mvn exec:java -Dexec.mainClass="org.hibernate.tutorial.EventManager" -Dexec.args="store" -->
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>1.2</version>
+      <executions>
+        <execution>
+          <goals>
+            <goal>java</goal>
+          </goals>
+        </execution>
+      </executions>
+      <configuration>
+        <mainClass>org.hibernate.tutorial.EventManager</mainClass>
+        <arguments>
+          <argument>store</argument>
+        </arguments>
+        <!--
+        <systemProperties>
+          <systemProperty>
+            <key>myproperty</key>
+            <value>myvalue</value>
+          </systemProperty>
+        </systemProperties>
+        -->
+      </configuration>
+    </plugin>
+   </plugins>
+  </build>
+</project>
+
+
+
+
+其中涉及如下问题：
+	(1)需要手工到网上查询依赖的版本号
+	(2)需要设置src/main/java和src/main/resources的过滤策略
+	(3)需要设置一些插件参数以支持UTF-8和方便测试
+	
+六、编写Java类
+（参考自：http://docs.jboss.org/hibernate/core/3.6/reference/zh-CN/html/tutorial.html）
+src\main\java\org\hibernate\tutorial\EventManager.java
+
+package org.hibernate.tutorial;
+
+import java.util.*;
+import org.hibernate.Session;
+import org.hibernate.tutorial.domain.Event;
+import org.hibernate.tutorial.util.HibernateUtil;
+
+public class EventManager {
+    public static void main(String[] args) {
+        EventManager mgr = new EventManager();
+		System.out.println("参数是" + args[0]);
+        if (args[0].equals("store")) {
+            mgr.createAndStoreEvent("My Event", new Date());
+        } else if (args[0].equals("list")) {
+            List events = mgr.listEvents();
+            for (int i = 0; i < events.size(); i++) {
+                Event theEvent = (Event) events.get(i);
+                System.out.println(
+					"Event: " + theEvent.getTitle() +
+					" Time: " + theEvent.getDate());
+            }
+        }
+        HibernateUtil.getSessionFactory().close();
+    }
+
+    private void createAndStoreEvent(String title, Date theDate) {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        session.beginTransaction();
+        Event theEvent = new Event();
+        theEvent.setTitle(title);
+        theEvent.setDate(theDate);
+        session.save(theEvent);
+        session.getTransaction().commit();
+    }
+
+    private List listEvents() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        session.beginTransaction();
+        List result = session.createQuery("from Event").list();
+        session.getTransaction().commit();
+        return result;
+    }
+}
+
+
+src\main\java\org\hibernate\tutorial\util\HibernateUtil.java
+
+package org.hibernate.tutorial.util;
+
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+public class HibernateUtil {
+    private static final SessionFactory sessionFactory = buildSessionFactory();
+
+    private static SessionFactory buildSessionFactory() {
+        try {
+            // Create the SessionFactory from hibernate.cfg.xml
+            // 从hibernate.cfg.xml中创建SessionFactory
+            return new Configuration().configure().buildSessionFactory();
+        } catch (Throwable ex) {
+            // Make sure you log the exception, as it might be swallowed
+            // 当它可能被吞食时，保证你的异常被记录到日志中
+            System.err.println("Initial SessionFactory creation failed." + ex);
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+}
+
+
+
+src\main\java\org\hibernate\tutorial\domain\Event.java
+
+package org.hibernate.tutorial.domain;
+
+import java.util.Date;
+
+public class Event {
+    private Long id;
+
+    private String title;
+    private Date date;
+
+    public Event() {}
+
+    public Long getId() {
+        return id;
+    }
+
+    private void setId(Long id) {
+        this.id = id;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+}
+
+
+七、编写.cfg.xml和.hbm.xml配置文件
+（参考自：http://docs.jboss.org/hibernate/core/3.6/reference/zh-CN/html/tutorial.html）
+创建src/main/resources目录
+src\main\resources\hibernate.cfg.xml
+
+
+
+
+src\main\java\org\hibernate\tutorial\domain\Event.hbm.xml
+
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.hibernate.tutorial.domain">
+    <class name="Event" table="EVENTS">
+        <id name="id" column="EVENT_ID">
+			<generator class="native"/>
+        </id>
+        <property name="date" type="timestamp" column="EVENT_DATE"/>
+        <property name="title"/>
+    </class>
+</hibernate-mapping>
+
+
+
+八、编译运行
+工程->右键->Debug As->Maven package
+如果显示BUILD SUCCESS
+你会看到
+/hibernate-tutorial/target/hibernate-tutorial-0.0.1-SNAPSHOT.jar
+这个jar文件
+然后启动第二步提到的hsqldb，双击startdb.bat
+工程->右键->Debug As->Maven build...->Goals->exec:java
+（因为我已经在pom.xml定义了参数，所以下面不用添加参数）
+按Run运行
+显示以下内容
+
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building hibernate-tutorial 0.0.1-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- exec-maven-plugin:1.2:java (default-cli) @ hibernate-tutorial ---
+参数是store
+0 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - Hibernate 3.3.2.GA
+0 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - hibernate.properties not found
+0 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - Bytecode provider name : javassist
+16 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - using JDK 1.4 java.sql.Timestamp handling
+63 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - configuring from resource: /hibernate.cfg.xml
+63 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - Configuration resource: /hibernate.cfg.xml
+2063 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - Reading mappings from resource : org/hibernate/tutorial/domain/Event.hbm.xml
+4375 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.HbmBinder - Mapping class: org.hibernate.tutorial.domain.Event -> EVENTS
+4391 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - Configured SessionFactory: null
+4438 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - Using Hibernate built-in connection pool (not for production use!)
+4438 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - Hibernate connection pool size: 1
+4438 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - autocommit mode: false
+4438 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - using driver: org.hsqldb.jdbcDriver at URL: jdbc:hsqldb:hsql://localhost:9001/test
+4438 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - connection properties: {user=sa, password=****}
+4484 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - RDBMS: HSQL Database Engine, version: 1.8.1
+4484 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC driver: HSQL Database Engine Driver, version: 1.8.0
+4500 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.dialect.Dialect - Using dialect: org.hibernate.dialect.HSQLDialect
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.transaction.TransactionFactoryFactory - Using default transaction strategy (direct JDBC transactions)
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.transaction.TransactionManagerLookupFactory - No TransactionManagerLookup configured (in JTA environment, use of read-write or transactional second-level cache is not recommended)
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Automatic flush during beforeCompletion(): disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Automatic session close at end of transaction: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC batch size: 15
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC batch updates for versioned data: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Scrollable result sets: enabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC3 getGeneratedKeys(): disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Connection release mode: auto
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Default batch fetch size: 1
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Generate SQL with comments: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Order SQL updates by primary key: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Order SQL inserts for batching: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Query translator: org.hibernate.hql.ast.ASTQueryTranslatorFactory
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.hql.ast.ASTQueryTranslatorFactory - Using ASTQueryTranslatorFactory
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Query language substitutions: {}
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JPA-QL strict compliance: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Second-level cache: enabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Query cache: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Cache region factory : org.hibernate.cache.impl.bridge.RegionFactoryCacheProviderBridge
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cache.impl.bridge.RegionFactoryCacheProviderBridge - Cache provider: org.hibernate.cache.NoCacheProvider
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Optimize cache for minimal puts: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Structured second-level cache entries: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Echoing all SQL to stdout
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Statistics: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Deleted entity synthetic identifier rollback: disabled
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Default entity-mode: pojo
+4516 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Named query checking : enabled
+4563 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.impl.SessionFactoryImpl - building session factory
+4719 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.impl.SessionFactoryObjectFactory - Not binding factory to JNDI, no JNDI name configured
+4719 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - Running hbm2ddl schema update
+4719 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - fetching database metadata
+4734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - updating schema
+4734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.DatabaseMetadata - table not found: EVENTS
+4734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.DatabaseMetadata - table not found: EVENTS
+4734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - schema update complete
+Hibernate: insert into EVENTS (EVENT_ID, EVENT_DATE, title) values (null, ?, ?)
+Hibernate: call identity()
+4813 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.impl.SessionFactoryImpl - closing
+4813 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - cleaning up connection pool: jdbc:hsqldb:hsql://localhost:9001/test
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 5.594s
+[INFO] Finished at: Tue Mar 08 21:29:54 CST 2011
+[INFO] Final Memory: 3M/15M
+[INFO] ------------------------------------------------------------------------
+
+
+如果把pom.xml中的参数store改为list，运行结果中显示刚才插入数据的时间
+
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building hibernate-tutorial 0.0.1-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- exec-maven-plugin:1.2:java (default-cli) @ hibernate-tutorial ---
+参数是list
+15 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - Hibernate 3.3.2.GA
+15 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - hibernate.properties not found
+15 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - Bytecode provider name : javassist
+15 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Environment - using JDK 1.4 java.sql.Timestamp handling
+109 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - configuring from resource: /hibernate.cfg.xml
+109 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - Configuration resource: /hibernate.cfg.xml
+1109 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - Reading mappings from resource : org/hibernate/tutorial/domain/Event.hbm.xml
+3531 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.HbmBinder - Mapping class: org.hibernate.tutorial.domain.Event -> EVENTS
+3546 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.Configuration - Configured SessionFactory: null
+3625 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - Using Hibernate built-in connection pool (not for production use!)
+3625 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - Hibernate connection pool size: 1
+3625 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - autocommit mode: false
+3625 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - using driver: org.hsqldb.jdbcDriver at URL: jdbc:hsqldb:hsql://localhost:9001/test
+3625 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - connection properties: {user=sa, password=****}
+3671 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - RDBMS: HSQL Database Engine, version: 1.8.1
+3671 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC driver: HSQL Database Engine Driver, version: 1.8.0
+3703 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.dialect.Dialect - Using dialect: org.hibernate.dialect.HSQLDialect
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.transaction.TransactionFactoryFactory - Using default transaction strategy (direct JDBC transactions)
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.transaction.TransactionManagerLookupFactory - No TransactionManagerLookup configured (in JTA environment, use of read-write or transactional second-level cache is not recommended)
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Automatic flush during beforeCompletion(): disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Automatic session close at end of transaction: disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC batch size: 15
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC batch updates for versioned data: disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Scrollable result sets: enabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JDBC3 getGeneratedKeys(): disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Connection release mode: auto
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Default batch fetch size: 1
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Generate SQL with comments: disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Order SQL updates by primary key: disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Order SQL inserts for batching: disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Query translator: org.hibernate.hql.ast.ASTQueryTranslatorFactory
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.hql.ast.ASTQueryTranslatorFactory - Using ASTQueryTranslatorFactory
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Query language substitutions: {}
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - JPA-QL strict compliance: disabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Second-level cache: enabled
+3718 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Query cache: disabled
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Cache region factory : org.hibernate.cache.impl.bridge.RegionFactoryCacheProviderBridge
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cache.impl.bridge.RegionFactoryCacheProviderBridge - Cache provider: org.hibernate.cache.NoCacheProvider
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Optimize cache for minimal puts: disabled
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Structured second-level cache entries: disabled
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Echoing all SQL to stdout
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Statistics: disabled
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Deleted entity synthetic identifier rollback: disabled
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Default entity-mode: pojo
+3734 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.cfg.SettingsFactory - Named query checking : enabled
+3796 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.impl.SessionFactoryImpl - building session factory
+4031 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.impl.SessionFactoryObjectFactory - Not binding factory to JNDI, no JNDI name configured
+4031 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - Running hbm2ddl schema update
+4031 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - fetching database metadata
+4031 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - updating schema
+4062 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.TableMetadata - table found: PUBLIC.EVENTS
+4062 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.TableMetadata - columns: [title, event_date, event_id]
+4062 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.TableMetadata - foreign keys: []
+4062 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.TableMetadata - indexes: [sys_idx_47]
+4062 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.tool.hbm2ddl.SchemaUpdate - schema update complete
+Hibernate: select event0_.EVENT_ID as EVENT1_0_, event0_.EVENT_DATE as EVENT2_0_, event0_.title as title0_ from EVENTS event0_
+Event: My Event Time: 2011-03-08 21:29:49.781
+4343 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.impl.SessionFactoryImpl - closing
+4343 [org.hibernate.tutorial.EventManager.main()] INFO org.hibernate.connection.DriverManagerConnectionProvider - cleaning up connection pool: jdbc:hsqldb:hsql://localhost:9001/test
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 5.156s
+[INFO] Finished at: Tue Mar 08 21:32:44 CST 2011
+[INFO] Final Memory: 4M/15M
+[INFO] ------------------------------------------------------------------------
+
+
+

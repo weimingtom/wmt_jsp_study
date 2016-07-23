@@ -1,0 +1,9 @@
+﻿1. 修改用户名和密码（目录搜索带root的文件），默认用户名是root，密码空
+2. 执行sql/make_load_db.bat创建mysql数据库
+3. 启动Tomcat 6
+4. 执行ant打包war（不要执行ant compile）
+5. 执行ant deploy安装war，执行ant undeploy卸载war
+6. 浏览器测试
+http://localhost:8080/hello/jsp/wroxjdbc/JDBCTest.jsp
+http://localhost:8080/hello/jsp/wroxjdbc/C3P0Test.jsp
+http://localhost:8080/hello/jsp/wroxjdbc/C3P0Test2.jsp

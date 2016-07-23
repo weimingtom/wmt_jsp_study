@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<settings>
+  <pluginGroups>
+    <pluginGroup>org.jboss.maven.plugins</pluginGroup>
+  </pluginGroups>
+  <profiles>
+    <profile>
+      <id>repos</id>
+      <properties>
+        <!-- Here we point to our local JDK 1.6 home -->
+        <jdk16_home>D:\java\jdk1.6.0_20</jdk16_home>
+      </properties>
+      <!-- Here we define the JBoss release and snapshot repos -->
+      <repositories>
+        <repository>
+          <id>jboss</id>
+          <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </repository>
+      </repositories>
+      <!-- Here we define the JBoss release and snapshot repos *for plugins* -->
+      <pluginRepositories>
+        <pluginRepository>
+          <id>jboss-plugins</id>
+          <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+  <!-- Here we add our profile defined in settings.xml to the active profiles -->
+  <activeProfiles>
+    <activeProfile>repos</activeProfile>
+  </activeProfiles>
+</settings>

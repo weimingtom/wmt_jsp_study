@@ -1,0 +1,157 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.hibernate.tutorials</groupId>
+  <artifactId>hibernate-tutorial</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>hibernate-tutorial</name>
+  <url>http://maven.apache.org</url>
+  
+  <!-- 上面的pom.xml片段都是用下面命令行自动生成的，并且创建了目录结构（不包括src/main/resources） -->
+  <!-- 
+       mvn archetype:generate 
+           -DgroupId=org.hibernate.tutorial 
+           -DartifactId=hibernate-tutorial 
+           -DarchetypeArtifactId=maven-archetype-quickstart 
+           -DinteractiveMode=false
+    -->
+
+  <!-- we dont want the version to be part of the generated war file name -->
+  <!-- 我们不想让生成的war文件名中包含版本号 -->
+  <!--
+  <build>
+    <finalName>${artifactId}</finalName>
+  </build>
+    -->
+  
+  <!-- 关闭警告 -->
+  <!--
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+    -->
+  
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    
+    
+    <!-- 依赖的关键字搜索在http://www.mvnbrowser.com/index.html，输入相应的库名，如hibernate-core -->
+    <!-- maven的搜索引擎请参考http://maven.apache.org/general.html -->
+	<dependency>
+	  <groupId>org.hibernate</groupId>
+	  <artifactId>hibernate-core</artifactId>
+	  <version>3.3.2.GA</version>
+	</dependency>
+	<!-- Because this is a web app, we also have a dependency on the servlet api. -->
+	<!-- 因为这是个web应用，我们也有一个对servlet api的依赖。 -->
+	<dependency>
+	  <groupId>javax.servlet</groupId>
+	  <artifactId>servlet-api</artifactId>
+	  <version>2.5</version>
+	</dependency>
+	<!-- Hibernate uses slf4j for logging, for our purposes here use the simple backend -->
+	<!-- Hibernate使用slf4j输出日志，这里我们只使用简单后端 -->
+	<dependency>
+	  <groupId>org.slf4j</groupId>
+	  <artifactId>slf4j-simple</artifactId>
+	  <version>1.5.6</version>
+	</dependency>
+	<!-- Hibernate gives you a choice of bytecode providers between cglib and javassist -->
+	<!-- Hibernate让你可以选择bytecode提供者是cglib还是javassist -->
+	<dependency>
+	  <groupId>javassist</groupId>
+	  <artifactId>javassist</artifactId>
+	  <version>3.10.0.GA</version>
+	</dependency>
+	<dependency>
+	  <groupId>hsqldb</groupId>
+	  <artifactId>hsqldb</artifactId>
+	  <version>1.8.0.1</version>
+	</dependency>
+  </dependencies>
+  
+  <!-- see http://maven.apache.org/plugins/maven-resources-plugin/examples/encoding.html-->
+  <build>
+   <!-- 资源 -->
+   <!-- 保留所有.hbm.xml文件 -->
+   <resources>
+	<resource>
+	 <filtering>false</filtering>
+	 <directory>src/main/java</directory>
+	 <includes>
+	 <include>**/*.hbm.xml</include>
+	 </includes>
+    </resource>
+	<!-- 保留resources下的所有文件 -->
+	<resource>
+	 <filtering>false</filtering>
+	 <directory>src/main/resources</directory>
+	 <includes>
+	 <include>**/*</include>
+	 </includes>
+    </resource>
+   </resources>
+   
+   <!-- 资源和编译器插件，参数设置方法见http://maven.apache.org/plugins/index.html -->
+   <plugins>
+    <!-- 资源插件，使用UTF-8编码 -->
+    <plugin>
+	  <groupId>org.apache.maven.plugins</groupId>  
+	  <artifactId>maven-resources-plugin</artifactId>
+	  <version>2.5</version>
+	  <configuration>  
+	    <encoding>UTF-8</encoding>  
+	  </configuration>  
+    </plugin>
+    <!-- 编译器插件，使用JDK1.6，使用UTF-8编码 -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>2.3.2</version>
+      <configuration>
+        <source>1.6</source>
+        <target>1.6</target>
+        <encoding>UTF-8</encoding>
+      </configuration>
+    </plugin>
+    <!-- 执行插件的java任务，参数设置方法见http://mojo.codehaus.org/exec-maven-plugin/usage.html-->
+    <!-- 指定java主类和参数，用于测试 -->
+    <!-- mvn clean compile后执行mvn exec:java --> 
+    <!-- 如果执行命令行，则为 -->
+    <!-- mvn exec:java -Dexec.mainClass="org.hibernate.tutorial.EventManager" -Dexec.args="store" -->
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>1.2</version>
+      <executions>
+        <execution>
+          <goals>
+            <goal>java</goal>
+          </goals>
+        </execution>
+      </executions>
+      <configuration>
+        <mainClass>org.hibernate.tutorial.EventManager</mainClass>
+        <arguments>
+          <argument>store</argument>
+        </arguments>
+        <!--
+        <systemProperties>
+          <systemProperty>
+            <key>myproperty</key>
+            <value>myvalue</value>
+          </systemProperty>
+        </systemProperties>
+        -->
+      </configuration>
+    </plugin>
+   </plugins>
+   
+  </build>
+</project>

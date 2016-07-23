@@ -1,0 +1,6 @@
+examples:
+	username: mike
+	password: abc123
+
+GRANT ALL PRIVILEGES ON wroxtomcat.* TO 'mike'@'localhost' IDENTIFIED BY 'abc123';
+FLUSH PRIVILEGES;
